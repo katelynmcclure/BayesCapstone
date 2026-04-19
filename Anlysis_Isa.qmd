@@ -1,0 +1,50 @@
+---
+title: "analysis——isa"
+format: html
+---
+
+```{r}
+library(tidyverse)
+sim_data <- readRDS("sim_data.rds")
+head(sim_data)
+```
+```{r}
+#creating occams threshold
+threshold <- max(results$post_prob) / 20
+```
+
+```{r}
+#filtering occams result
+occams_results <- results %>%
+  filter(post_prob >= threshold) %>%
+  mutate(post_prob_normalized = post_prob / sum(post_prob)) #normalized the weight 
+sum(occams_results$post_prob_normalized)
+print(paste("Original number of models:", nrow(results)))
+print(paste("Number of models after Occam's Window:", nrow(occams_results)))
+#check which models win
+occams_results %>% 
+  select(model, post_prob_normalized)
+```
+
+```{r}
+calc_pip <- function(var_name, data) {
+  data %>%
+    filter(str_detect(model, var_name)) %>%
+    summarise(pip = sum(post_prob_normalized)) %>%
+    pull(pip)
+}
+
+pip_values <- tibble(
+  predictor = c("x1", "x2", "x3", "x4"),
+  pip = map_dbl(predictor, calc_pip, data = occams_results)
+)
+
+# visuals 
+ggplot(pip_values, aes(x = reorder(predictor, -pip), y = pip)) +
+  geom_col(fill = "pink") +
+  theme_minimal() +
+  labs(title = "Variable Inclusion Probabilities (PIP)",
+       subtitle = "Calculated using Occam's Window",
+       x = "Predictors", y = "Probability")
+```
+
