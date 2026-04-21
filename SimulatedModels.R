@@ -1,5 +1,8 @@
 library(tidyverse)
 
+# questions: testing and training data?
+
+
 sim_data <- readRDS("sim_data.rds")
 
 preds <- c("x1", "x2", "x3", "x4")
@@ -80,3 +83,33 @@ tibble(
     mean((sim_data$y - sim_data$best_model_pred)^2)
   )
 )
+
+
+# BAS PACKAGE STUFF
+library(BAS)
+bas_g <- bas.lm(
+  y ~ x1 + x2 + x3 + x4,
+  data = sim_data,
+  prior = "g-prior",
+  alpha = n,
+  modelprior = uniform(),
+  n.models = 16   # explicitly force full enumeration
+)
+
+bas_eb <- bas.lm(
+  y ~ x1 + x2 + x3 + x4,
+  data = sim_data,
+  prior = "EB-local",
+  modelprior = uniform(),
+  n.models = 16
+)
+
+# posterior inclusion probabilities (look into more)
+pip_g  <- bas_g$probne0
+pip_eb <- bas_eb$probne0
+
+
+bma_pred <- predict(bas_g, newdata = sim_data, estimator = "BMA") # model average
+best_pred <- predict(bas_g, newdata = sim_data, estimator = "HPM") # best model 
+
+
