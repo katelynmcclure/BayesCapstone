@@ -56,3 +56,51 @@ summary(ols_model)
 
 ```
 
+
+```{r}
+
+set.seed(123)
+n <- nrow(sim_data)
+
+extra_noise <- matrix(rnorm(n * 11), ncol = 11)
+colnames(extra_noise) <- paste0("noise_", 1:11)
+
+wide_data <- as.data.frame(cbind(sim_data, extra_noise))
+
+dim(wide_data)
+```
+
+```{r}
+library(BAS)
+
+mcmc_bma <- bas.lm(y ~ ., 
+                   data = wide_data, 
+                   method = "MCMC",               
+                   MCMC.iterations = 10000,       
+                   prior = "BIC", 
+                   modelprior = uniform())
+
+
+mcmc_pip_data <- data.frame(
+  variable = mcmc_bma$namesx,
+  pip = as.numeric(mcmc_bma$probne0)
+) %>% 
+  filter(variable != "Intercept") 
+
+
+ggplot(mcmc_pip_data, aes(x = reorder(variable, -pip), y = pip)) +
+  geom_col(fill = "steelblue") +
+  theme_minimal() +
+  labs(title = "Posterior Inclusion Probabilities (M-H MCMC)",
+       subtitle = "Scenario: Predicting Exam Scores with 15 Predictors",
+       x = "Predictors", y = "PIP (Probability)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+plot(mcmc_bma, which = 4, ask = FALSE, caption = "MCMC Model Search Traceplot")
+```
+```{r}
+diagnostics(mcmc_bma, type = "model-probability")
+
+
+```
+
