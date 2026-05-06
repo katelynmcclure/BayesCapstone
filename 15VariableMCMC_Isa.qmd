@@ -1,0 +1,56 @@
+---
+title: "15VariableMCMC_Isa"
+format: html
+---
+
+```{r}
+set.seed(454)
+n <- 100  #sample size
+
+x1 <- rnorm(n); x2 <- 0.85*x1 + rnorm(n,0,0.5); x3 <- rnorm(n); x4 <- rnorm(n)
+
+# creating 11 noise predictors 
+noise_vars <- matrix(rnorm(n * 11), ncol = 11)
+colnames(noise_vars) <- paste0("noise_", 1:11)
+y = 2 + 2*x1 + 0.8*x3 + rnorm(n, 0, 2.5)
+
+#combine all 15 predictors
+sim_data_15 <- data.frame(y, x1, x2, x3, x4, noise_vars)
+
+# Use BAS package for MCMC 
+library(BAS)
+bas_15 <- bas.lm(y ~ ., # "." 
+                 data = sim_data_15,
+                 prior = "BIC",
+                 modelprior = uniform(),
+                 method = "MCMC",
+                 MCMC.iterations = 50000)  # more iterations because more predictors 
+
+# PIP
+plot(bas_15, which = 4) 
+```
+```{r}
+image(bas_15, rotate = TRUE)
+plot(bas_15, which = 2)
+```
+
+```{r}
+bma_fit <- predict(bas_15, estimator = "BMA")$fit
+plot(sim_data_15$y, bma_fit, pch = 16, col = "steelblue", 
+     xlab = "True Value (y)", ylab = "BMA Predicted Value")
+abline(0, 1, col = "red", lwd = 2) 
+```
+
+```{r}
+par(mfrow = c(3, 1), mar = c(3, 4, 2, 1))
+
+x1_raw     <- as.integer(sapply(bas_15$which, function(w) 1 %in% w))
+x2_raw     <- as.integer(sapply(bas_15$which, function(w) 2 %in% w))
+noise1_raw <- as.integer(sapply(bas_15$which, function(w) 5 %in% w))
+
+plot(x1_raw,     type = "l", ylab = "Selected", main = "Trace: x1",     ylim = c(0,1))
+plot(x2_raw,     type = "l", ylab = "Selected", main = "Trace: x2",     ylim = c(0,1))
+plot(noise1_raw, type = "l", ylab = "Selected", main = "Trace: noise_1", ylim = c(0,1))
+```
+
+
