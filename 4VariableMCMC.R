@@ -47,7 +47,8 @@ ggplot(pip_df, aes(x = variable, y = pip)) +
     x = "Variable",
     y = "PIP"
   ) +
-  theme_minimal()
+  theme_minimal() + 
+  ggsave("MHMCMC_PIP.png")
 
 
 # just like what BAS does under the hood!
@@ -76,4 +77,5 @@ ggplot(pip_df_bas, aes(x = variable, y = pip)) +
     x = "Variable",
     y = "PIP"
   ) +
-  theme_minimal()
+  theme_minimal()  + 
+  ggsave("BAS4Var_PIP.png")
